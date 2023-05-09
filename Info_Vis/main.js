@@ -15,15 +15,16 @@ const map = new mapboxgl.Map({
 });
 
 d3.csv('population.csv').then(async data => {
-  const geocodingPromises = data.map(async (d) => {
-    const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${d.citizenship_stable}.json?access_token=${mapboxgl.accessToken}`);
-    const geocodingData = await res.json();
-    d.stable_longitude = geocodingData.features[0].center[0];
-    d.stable_latitude = geocodingData.features[0].center[1];
-    return d;
+  // Send the data to the server for geocoding
+  const res = await fetch('geocode.php', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ data: data })
   });
 
-  const geocodedData = await Promise.all(geocodingPromises);
+  const geocodedData = await res.json();
 
   // Convert the geocoded data to CSV
   const csvContent = d3.csvFormat(geocodedData);
