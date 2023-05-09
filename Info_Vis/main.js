@@ -54,11 +54,13 @@ d3.csv('population.csv').then(async data => {
 
 // Function to convert the data to GeoJSON
 function convertToGeoJSON(data) {
-  return {
-    type: 'FeatureCollection',
-    features: data.flatMap(d => ([
-      // Origin feature
-      {
+  let aggregatedData = {};
+
+  data.forEach(d => {
+    // Aggregate origin features
+    let originKey = `${d.year}-origin-${d.citizenship_stable}`;
+    if (!aggregatedData[originKey]) {
+      aggregatedData[originKey] = {
         type: 'Feature',
         properties: {
           year: d.year,
@@ -71,9 +73,15 @@ function convertToGeoJSON(data) {
           type: 'Point',
           coordinates: [parseFloat(d.stable_longitude), parseFloat(d.stable_latitude)],
         }
-      },
-      // Destination feature
-      {
+      };
+    } else {
+      aggregatedData[originKey].properties.value += parseFloat(d.refugees) || 0;
+    }
+
+    // Aggregate destination features
+    let destinationKey = `${d.year}-destination-${d.city}`;
+    if (!aggregatedData[destinationKey]) {
+      aggregatedData[destinationKey] = {
         type: 'Feature',
         properties: {
           year: d.year,
@@ -86,10 +94,18 @@ function convertToGeoJSON(data) {
           type: 'Point',
           coordinates: [parseFloat(d.longitude), parseFloat(d.latitude)],
         }
-      }
-    ]))
+      };
+    } else {
+      aggregatedData[destinationKey].properties.value += parseFloat(d.refugees) || 0;
+    }
+  });
+
+  return {
+    type: 'FeatureCollection',
+    features: Object.values(aggregatedData)
   };
 }
+
 
 // Function to update the map
 function updateMap(data) {
