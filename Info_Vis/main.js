@@ -88,6 +88,8 @@ function updateMap(data) {
   // });
 // Log the destination features to the console
     console.log('Destination features:', data.features.filter(feature => feature.properties.featureType === 'destination'));
+  // Log the origin features to the console
+    console.log('Origin features:', data.features.filter(feature => feature.properties.featureType === 'origin'));
 
 
   // Add the data to the map as a source
