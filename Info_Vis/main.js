@@ -17,6 +17,12 @@ const map = new mapboxgl.Map({
 // Fetch and prepare the data
 d3.csv('population.csv').then(async data => {
   console.log(data);  // Log the raw data
+// Log the stable_longitude and stable_latitude
+data.forEach(d => {
+  console.log('Stable Longitude:', d.stable_longitude);
+  console.log('Stable Latitude:', d.stable_latitude);
+});
+
   // Convert the data to GeoJSON format
   let geojson = convertToGeoJSON(data);
 
@@ -91,7 +97,6 @@ function updateMap(data) {
     console.log('Destination features:', data.features.filter(feature => feature.properties.featureType === 'destination'));
   // Log the origin features to the console
     console.log('Origin features:', data.features.filter(feature => feature.properties.featureType === 'origin'));
-
 
   // Add the data to the map as a source
   if (map.getSource('yearData')) {
