@@ -82,10 +82,13 @@ function convertToGeoJSON(data) {
 // Function to update the map
 function updateMap(data) {
   // Log the values to the console
-  data.features.forEach(feature => {
-    console.log('Year:', feature.properties.year);
-    console.log('Value:', feature.properties.value);
-  });
+  // data.features.forEach(feature => {
+  //   console.log('Year:', feature.properties.year);
+  //   console.log('Value:', feature.properties.value);
+  // });
+// Log the destination features to the console
+    console.log('Destination features:', data.features.filter(feature => feature.properties.featureType === 'destination'));
+
 
   // Add the data to the map as a source
   if (map.getSource('yearData')) {
@@ -93,9 +96,7 @@ function updateMap(data) {
   } else {
     map.addSource('yearData', { type: 'geojson', data: data });
   }
-  // Log the destination features to the console
-  console.log('Destination features:', data.features.filter(feature => feature.properties.featureType === 'destination'));
-
+  
   // Use the 'yearData' source to create   // a new layer for origin
   if (!map.getLayer('originData')) {
     map.addLayer({
