@@ -16,17 +16,20 @@ const map = new mapboxgl.Map({
 
 // Fetch and prepare the data
 d3.csv('population.csv').then(async data => {
-  console.log(data);  // Log the raw data
- // Log the stable_longitude, stable_latitude, longitude, and latitude
- data.forEach(d => {
-  console.log('Stable Longitude:', d.stable_longitude);
-  console.log('Stable Latitude:', d.stable_latitude);
-  console.log('Longitude:', d.longitude);
-  console.log('Latitude:', d.latitude);
-});
-
+  // Use Mapbox geocoding service to get the stable_longitude and stable_latitude
+  const geocodingPromises = data.map(async (d) => {
+    const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${d.citizenship_stable}.json?access_token=${mapboxgl.accessToken}`);
+    const geocodingData = await res.json();
+    d.stable_longitude = geocodingData.features[0].center[0];
+    d.stable_latitude = geocodingData.features[0].center[1];
+    return d;
+  });
+  
+  // Wait for all geocoding to finish
+  const geocodedData = await Promise.all(geocodingPromises);
+  
   // Convert the data to GeoJSON format
-  let geojson = convertToGeoJSON(data);
+  let geojson = convertToGeoJSON(geocodedData);
 
   // Update the map
   updateMap(geojson);
