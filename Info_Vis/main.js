@@ -93,6 +93,8 @@ function updateMap(data) {
   } else {
     map.addSource('yearData', { type: 'geojson', data: data });
   }
+  // Log the destination features to the console
+  console.log('Destination features:', data.features.filter(feature => feature.properties.featureType === 'destination'));
 
   // Use the 'yearData' source to create   // a new layer for origin
   if (!map.getLayer('originData')) {
