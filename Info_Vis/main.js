@@ -14,9 +14,7 @@ const map = new mapboxgl.Map({
   hash: true
 });
 
-// Fetch and prepare the data
 d3.csv('population.csv').then(async data => {
-  // Use Mapbox geocoding service to get the stable_longitude and stable_latitude
   const geocodingPromises = data.map(async (d) => {
     const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${d.citizenship_stable}.json?access_token=${mapboxgl.accessToken}`);
     const geocodingData = await res.json();
@@ -24,15 +22,19 @@ d3.csv('population.csv').then(async data => {
     d.stable_latitude = geocodingData.features[0].center[1];
     return d;
   });
-  
-  // Wait for all geocoding to finish
+
   const geocodedData = await Promise.all(geocodingPromises);
+
+  // Convert the geocoded data to CSV
+  const csvContent = d3.csvFormat(geocodedData);
+
   // Save the geocoded data to a local file
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([JSON.stringify(geocodedData, null, 2)], {type: 'application/json'}));
-  a.download = 'geocodedData.json';
+  a.href = URL.createObjectURL(new Blob([csvContent], {type: 'text/csv'}));
+  a.download = 'geocodedData.csv';
   a.click();
-  
+
+
   // Convert the data to GeoJSON format
   let geojson = convertToGeoJSON(geocodedData);
 
