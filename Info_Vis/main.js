@@ -17,10 +17,12 @@ const map = new mapboxgl.Map({
 // Fetch and prepare the data
 d3.csv('population.csv').then(async data => {
   console.log(data);  // Log the raw data
-// Log the stable_longitude and stable_latitude
-data.forEach(d => {
+ // Log the stable_longitude, stable_latitude, longitude, and latitude
+ data.forEach(d => {
   console.log('Stable Longitude:', d.stable_longitude);
   console.log('Stable Latitude:', d.stable_latitude);
+  console.log('Longitude:', d.longitude);
+  console.log('Latitude:', d.latitude);
 });
 
   // Convert the data to GeoJSON format
