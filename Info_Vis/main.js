@@ -14,34 +14,16 @@ const map = new mapboxgl.Map({
   hash: true
 });
 
-// Cache for geocoding results
-const geocodingCache = {};
-
-// Function to fetch geocoding data
-async function fetchGeocodingData(location) {
-  if (!geocodingCache[location]) {
-    const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${location}.json?access_token=${mapboxgl.accessToken}`);
-    const geocodingData = await res.json();
-    geocodingCache[location] = geocodingData.features[0].center;
-  }
-  return geocodingCache[location];
-}
-
 // Fetch and prepare the data
 d3.csv('population.csv').then(async data => {
-  const BATCH_SIZE = 50;
-  const geocodingPromises = [];
-  
-  for (let i = 0; i < data.length; i += BATCH_SIZE) {
-    const batch = data.slice(i, i + BATCH_SIZE);
-    geocodingPromises.push(...batch.map(async (d) => {
-      const [longitude, latitude] = await fetchGeocodingData(d.citizenship_stable);
-      d.stable_longitude = longitude;
-      d.stable_latitude = latitude;
-      return d;
-    }));
-    await Promise.all(geocodingPromises);
-  }
+  // Use Mapbox geocoding service to get the stable_longitude and stable_latitude
+  const geocodingPromises = data.map(async (d) => {
+    const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${d.citizenship_stable}.json?access_token=${mapboxgl.accessToken}`);
+    const geocodingData = await res.json();
+    d.stable_longitude = geocodingData.features[0].center[0];
+    d.stable_latitude = geocodingData.features[0].center[1];
+    return d;
+  });
   
   // Wait for all geocoding to finish
   const geocodedData = await Promise.all(geocodingPromises);
@@ -69,6 +51,7 @@ d3.csv('population.csv').then(async data => {
     map.setFilter('yearData', ['==', ['get', 'year'], year]);
   });
 });
+
 // Function to convert the data to GeoJSON
 function convertToGeoJSON(data) {
   return {
