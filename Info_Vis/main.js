@@ -14,29 +14,9 @@ const map = new mapboxgl.Map({
   hash: true
 });
 
-d3.csv('population.csv').then(async data => {
-  // Send the data to the server for geocoding
-  const res = await fetch('geocode.php', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ data: data })
-  });
-
-  const geocodedData = await res.json();
-
-  // Convert the geocoded data to CSV
-  const csvContent = d3.csvFormat(geocodedData);
-
-  // Save the geocoded data to a local file
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([csvContent], {type: 'text/csv'}));
-  a.download = 'geocodedData.csv';
-  a.click();
-
+d3.csv('geocoded_population_no_missing.csv').then(data => {
   // Convert the data to GeoJSON format
-  let geojson = convertToGeoJSON(geocodedData);
+  let geojson = convertToGeoJSON(data);
 
   // Update the map
   updateMap(geojson);
