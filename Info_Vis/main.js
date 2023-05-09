@@ -27,6 +27,11 @@ d3.csv('population.csv').then(async data => {
   
   // Wait for all geocoding to finish
   const geocodedData = await Promise.all(geocodingPromises);
+  // Save the geocoded data to a local file
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(geocodedData, null, 2)], {type: 'application/json'}));
+  a.download = 'geocodedData.json';
+  a.click();
   
   // Convert the data to GeoJSON format
   let geojson = convertToGeoJSON(geocodedData);
