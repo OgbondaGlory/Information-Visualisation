@@ -16,6 +16,7 @@ const map = new mapboxgl.Map({
 
 // Fetch and prepare the data
 d3.csv('population.csv').then(async data => {
+  console.log(data);  // Log the raw data
   // Convert the data to GeoJSON format
   let geojson = convertToGeoJSON(data);
 
