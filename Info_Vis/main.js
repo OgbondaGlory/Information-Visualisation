@@ -63,7 +63,10 @@ map.on('load', function () {
       // if (map.getLayer('lineLayer')) {
       //   map.setFilter('lineLayer', ['==', ['get', 'year'], year]);
       // }
-      
+      // Remove the loading spinner
+    let loader = document.getElementById('loader');
+    loader.style.display = 'none';
+    
     });
   });
 });
