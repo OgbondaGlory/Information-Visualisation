@@ -93,6 +93,15 @@ function convertToGeoJSON(data) {
 
 // Function to update the map
 function updateMap(data) {
+
+  // Add an event listener to update the map when the slider value changes
+slider.on('input', function() {
+  let year = this.value;
+  if (map.getSource('yearData')) { // Check if the source exists before filtering
+    map.setFilter('yearData', ['==', ['get', 'year'], year]);
+  }
+});
+
   console.log('Destination features:', data.features.filter(feature => feature.properties.featureType === 'destination'));
   console.log('Origin features:', data.features.filter(feature => feature.properties.featureType === 'origin'));
 
