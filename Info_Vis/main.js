@@ -1,5 +1,5 @@
 // Set your Mapbox API access token
-mapboxgl.accessToken = 'pk.eyJ1Ijoib2dib25kYWdsb3J5IiwiYSI6ImNsaGZlajZqZzA3eGQzbnBmc3Z1dXNhNHoifQ.5jg6108wmHZYjgvBoN-NoA';
+mapboxgl.accessToken = 'pk.eyJ1Ijoib2dib25kYWdlbG9yeSIsImEiOiJja2x3cXV3YzYwNWF3MnZwYjUzNjBvdjRnIn0.Q4W5B2FZYOYyXp3aW0iHzw';
 
 // Initialize the map
 const map = new mapboxgl.Map({
@@ -23,29 +23,43 @@ d3.csv('geocoded_population_no_missing.csv').then(data => {
 
   // Create an interactive timeline
   let years = Array.from(new Set(data.map(d => d.year)));
-  let slider = d3.select('body').append('input')
-    .attr('type', 'range')
-    .attr('min', d3.min(years))
-    .attr('max', d3.max(years))
-    .attr('value', d3.min(years))
+
+  // Create a container for the slider and label
+  let sliderContainer = d3.select('body').append('div')
     .style('position', 'absolute') // Set position to absolute to make the slider appear on top of the map
     .style('top', '10px') // Set top margin
     .style('left', '10px'); // Set left margin
 
+  // Create the slider
+  let slider = sliderContainer.append('input')
+    .attr('type', 'range')
+    .attr('min', d3.min(years))
+    .attr('max', d3.max(years))
+    .attr('value', d3.min(years))
+    .style('width', '300px'); // Set the width of the slider
+
+  // Create the label
+  let sliderLabel = sliderContainer.append('p')
+    .style('font-weight', 'bold')
+    .style('color', 'black')
+    .text(`Year: ${d3.min(years)}`);
+
   // Add an event listener to update the map when the slider value changes
- // Updated slider event listener
-slider.on('input', function() {
-  let year = this.value;
+  slider.on('input', function() {
+    let year = this.value;
 
-  // Check if the layer exists before filtering
-  if (map.getLayer('originData')) {
-    map.setFilter('originData', ['==', ['get', 'year'], year]);
-  }
+    // Update the label
+    sliderLabel.text(`Year: ${year}`);
 
-  if (map.getLayer('destinationData')) {
-    map.setFilter('destinationData', ['==', ['get', 'year'], year]);
-  }
-});
+    // Check if the layer exists before filtering
+    if (map.getLayer('originData')) {
+      map.setFilter('originData', ['==', ['get', 'year'], year]);
+    }
+
+    if (map.getLayer('destinationData')) {
+      map.setFilter('destinationData', ['==', ['get', 'year'], year]);
+    }
+  });
 });
 
 
