@@ -33,12 +33,19 @@ d3.csv('geocoded_population_no_missing.csv').then(data => {
     .style('left', '10px'); // Set left margin
 
   // Add an event listener to update the map when the slider value changes
-  slider.on('input', function() {
-    let year = this.value;
-    if (map.getSource('yearData')) { // Check if the source exists before filtering
-      map.setFilter('yearData', ['==', ['get', 'year'], year]);
-    }
-  });
+ // Updated slider event listener
+slider.on('input', function() {
+  let year = this.value;
+
+  // Check if the layer exists before filtering
+  if (map.getLayer('originData')) {
+    map.setFilter('originData', ['==', ['get', 'year'], year]);
+  }
+
+  if (map.getLayer('destinationData')) {
+    map.setFilter('destinationData', ['==', ['get', 'year'], year]);
+  }
+});
 });
 
 
