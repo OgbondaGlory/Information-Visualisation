@@ -63,6 +63,7 @@ d3.csv('geocoded_population_no_missing.csv').then(data => {
 });
 
 // Function to convert the data to GeoJSON
+// Function to convert the data to GeoJSON
 function convertToGeoJSON(data) {
   let aggregatedData = {};
 
@@ -106,6 +107,29 @@ function convertToGeoJSON(data) {
     } else {
       aggregatedData[destinationKey].properties.value += parseFloat(d.refugees) || 0;
     }
+
+    // Create a line feature for each row
+    let lineKey = `${d.year}-line-${d.citizenship_stable}-${d.city}`;
+    if (!aggregatedData[lineKey]) {
+      aggregatedData[lineKey] = {
+        type: 'Feature',
+        properties: {
+          year: d.year,
+          value: parseFloat(d.refugees) || 0,
+          citizenship_stable: d.citizenship_stable,
+          featureType: 'line'
+        },
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [parseFloat(d.stable_longitude), parseFloat(d.stable_latitude)],
+            [parseFloat(d.longitude), parseFloat(d.latitude)]
+          ]
+        }
+      };
+    } else {
+      aggregatedData[lineKey].properties.value += parseFloat(d.refugees) || 0;
+    }
   });
 
   return {
@@ -116,10 +140,7 @@ function convertToGeoJSON(data) {
 
 // Function to update the map
 function updateMap(data) {
-  console.log('Destination features:', data.features.filter(feature => feature.properties.featureType === 'destination'));
-  console.log('Origin features:', data.features.filter(feature => feature.properties.featureType === 'origin'));
-
-  // Separate origin and destination data
+  // Separate origin, destination, and line data
   let originData = {
     type: 'FeatureCollection',
     features: data.features.filter(feature => feature.properties.featureType === 'origin')
@@ -128,14 +149,18 @@ function updateMap(data) {
     type: 'FeatureCollection',
     features: data.features.filter(feature => feature.properties.featureType === 'destination')
   };
+  let lineData = {
+    type: 'FeatureCollection',
+    features: data.features.filter(feature => feature.properties.featureType === 'line')
+  };
 
-  // Add the data to the map as a source
+  // Add the origin data to the map as a source
   if (map.getSource('originData')) {
     map.getSource('originData').setData(originData);
   } else {
     map.addSource('originData', { type: 'geojson', data: originData });
   }
-  
+
   // Use the 'originData' source to create a new layer for origin
   if (!map.getLayer('originLayer')) {
     map.addLayer({
@@ -157,7 +182,7 @@ function updateMap(data) {
     });
   }
 
-  // Add the data to the map as a source
+  // Add the destination data to the map as a source
   if (map.getSource('destinationData')) {
     map.getSource('destinationData').setData(destinationData);
   } else {
@@ -190,5 +215,35 @@ function updateMap(data) {
       }
     });
   }
+
+  // Add the line data to the map as a source
+  if (map.getSource('lineData')) {
+    map.getSource('lineData').setData(lineData);
+  } else {
+    map.addSource('lineData', { type: 'geojson', data: lineData });
+  }
+
+  // Use the 'lineData' source to create a new layer for migration lines
+  if (!map.getLayer('lineLayer')) {
+    map.addLayer({
+      id: 'lineLayer',
+      type: 'line',
+      source: 'lineData',
+      paint: {
+        'line-width': [
+          'interpolate',
+          ['linear'],
+          ['get', 'value'],
+          1, 1, // Line width of 1 for values between 1-70
+          70, 3, // Line width of 3 for values between 71-140
+          140, 5 // Line width of 5 for values between 141-200
+        ],
+        'line-color': '#0000FF',
+        'line-opacity': 0.8
+      }
+    });
+  }
 }
+
+
 
