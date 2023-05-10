@@ -22,6 +22,7 @@ map.on('load', function () {
     // Update the map
     updateMap(geojson);
 
+    // Rest of your code...
     // Create an interactive timeline
     let years = Array.from(new Set(data.map(d => d.year)));
 
@@ -60,10 +61,6 @@ map.on('load', function () {
       if (map.getLayer('destinationLayer')) {
         map.setFilter('destinationLayer', ['==', ['get', 'year'], year]);
       }
-      // if (map.getLayer('lineLayer')) {
-      //   map.setFilter('lineLayer', ['==', ['get', 'year'], year]);
-      // }
-      
     });
   });
 });
@@ -115,27 +112,27 @@ function convertToGeoJSON(data) {
     }
 
     // Create line features connecting origins to destinations
-    // let lineKey = `${d.year}-line-${d.citizenship_stable}-${d.city}`;
-    // if (!aggregatedData[lineKey]) {
-    //   aggregatedData[lineKey] = {
-    //     type: 'Feature',
-    //     properties: {
-    //       year: d.year,
-    //       value: parseFloat(d.refugees) || 0,
-    //       citizenship_stable: d.citizenship_stable,
-    //       featureType: 'line'
-    //     },
-    //     geometry: {
-    //       type: 'LineString',
-    //       coordinates: [
-    //         [parseFloat(d.stable_longitude), parseFloat(d.stable_latitude)],
-    //         [parseFloat(d.longitude), parseFloat(d.latitude)]
-    //       ],
-    //     }
-    //   };
-    // } else {
-    //   aggregatedData[lineKey].properties.value += parseFloat(d.refugees) || 0;
-    // }
+    let lineKey = `${d.year}-line-${d.citizenship_stable}-${d.city}`;
+    if (!aggregatedData[lineKey]) {
+      aggregatedData[lineKey] = {
+        type: 'Feature',
+        properties: {
+          year: d.year,
+          value: parseFloat(d.refugees) || 0,
+          citizenship_stable: d.citizenship_stable,
+          featureType: 'line'
+        },
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [parseFloat(d.stable_longitude), parseFloat(d.stable_latitude)],
+            [parseFloat(d.longitude), parseFloat(d.latitude)]
+          ],
+        }
+      };
+    } else {
+      aggregatedData[lineKey].properties.value += parseFloat(d.refugees) || 0;
+    }
   });
 
   return {
@@ -157,16 +154,10 @@ function updateMap(data) {
     type: 'FeatureCollection',
     features: data.features.filter(feature => feature.properties.featureType === 'destination')
   };
-  // let lineData = {
-  //   type: 'FeatureCollection',
-  //   features: data.features.filter(feature => feature.properties.featureType === 'line')
-  // };
-  // console.log(lineData); // Log the line data to the console
-  // console.log(originData); // Log the line data to the console
-  // console.log(destinationData); // Log the line data to the console
-  // console.log(JSON.stringify(originData, null, 2));
-  // console.log(JSON.stringify(lineData, null, 2));
-
+  let lineData = {
+    type: 'FeatureCollection',
+    features: data.features.filter(feature => feature.properties.featureType === 'line')
+  };
 
   // Add the origin data to the map as a source
   if (map.getSource('originData')) {
@@ -245,31 +236,38 @@ function updateMap(data) {
       console.log("Error adding destination layer: ", error);
     }
   }
-// / Add the line data to the map as a source
-  // if (map.getSource('lineData')) {
-  //   map.getSource('lineData').setData(lineData);
-  // } else {
-  //   try {
-  //     map.addSource('lineData', { type: 'geojson', data: lineData });
-  //   } catch (error) {
-  //     console.log("Error adding line data source: ", error);
-  //   }
-  // }
+// Add the line data to the map as a source
+  if (map.getSource('lineData')) {
+    map.getSource('lineData').setData(lineData);
+  } else {
+    try {
+      map.addSource('lineData', { type: 'geojson', data: lineData });
+    } catch (error) {
+      console.log("Error adding line data source: ", error);
+    }
+  }
 
-  // // Use the 'lineData' source to create a new layer for lines
-  // if (!map.getLayer('lineLayer')) {
-  //   try {
-  //     map.addLayer({
-  //       id: 'lineLayer',
-  //       type: 'line',
-  //       source: 'lineData',
-  //       paint: {
-  //         'line-width': 20,
-  //         'line-color': '#007cbf'
-  //       }
-  //     });
-  //   } catch (error) {
-  //     console.log("Error adding line layer: ", error);
-  //   }
-  // }
+  // Use the 'lineData' source to create a new layer for lines
+  if (!map.getLayer('lineLayer')) {
+    try {
+      map.addLayer({
+        id: 'lineLayer',
+        type: 'line',
+        source: 'lineData',
+        paint: {
+          'line-width': 2,
+          'line-color': '#007cbf'
+        }
+      });
+    } catch (error) {
+      console.log("Error adding line layer: ", error);
+    }
+  }
 }
+
+
+
+
+
+
+
