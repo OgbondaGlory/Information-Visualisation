@@ -1,5 +1,5 @@
 // Set your Mapbox API access token
-mapboxgl.accessToken = 'pk.eyJ1Ijoib2dib25kYWdlbG9yeSIsImEiOiJja2x3cXV3YzYwNWF3MnZwYjUzNjBvdjRnIn0.Q4W5B2FZYOYyXp3aW0iHzw';
+mapboxgl.accessToken = 'pk.eyJ1Ijoib2dib25kYWdsb3J5IiwiYSI6ImNsaGZlajZqZzA3eGQzbnBmc3Z1dXNhNHoifQ.5jg6108wmHZYjgvBoN-NoA';
 
 // Initialize the map
 const map = new mapboxgl.Map({
@@ -61,7 +61,6 @@ d3.csv('geocoded_population_no_missing.csv').then(data => {
     }
   });
 });
-
 
 // Function to convert the data to GeoJSON
 function convertToGeoJSON(data) {
