@@ -72,6 +72,10 @@ map.on('load', function () {
       map.getCanvas().style.cursor = '';
       popup.remove();
     });
+    map.on('mouseleave', 'originLayer', function() {
+      map.getCanvas().style.cursor = '';
+      popup.remove();
+    });
   });
 });
 
