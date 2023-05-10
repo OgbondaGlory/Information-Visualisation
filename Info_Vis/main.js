@@ -151,7 +151,7 @@ function updateMap(data) {
           70, 10, // Circle radius of 10 for values between 71-140
           140, 15 // Circle radius of 15 for values between 141-200
         ],
-        'circle-color': 'green', // set color to green for origin
+        'circle-color': 'yellow', // set color to green for origin
         'circle-opacity': 0.8
       }
     });
