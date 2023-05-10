@@ -119,20 +119,29 @@ function updateMap(data) {
   console.log('Destination features:', data.features.filter(feature => feature.properties.featureType === 'destination'));
   console.log('Origin features:', data.features.filter(feature => feature.properties.featureType === 'origin'));
 
+  // Separate origin and destination data
+  let originData = {
+    type: 'FeatureCollection',
+    features: data.features.filter(feature => feature.properties.featureType === 'origin')
+  };
+  let destinationData = {
+    type: 'FeatureCollection',
+    features: data.features.filter(feature => feature.properties.featureType === 'destination')
+  };
+
   // Add the data to the map as a source
-  if (map.getSource('yearData')) {
-    map.getSource('yearData').setData(data);
+  if (map.getSource('originData')) {
+    map.getSource('originData').setData(originData);
   } else {
-    map.addSource('yearData', { type: 'geojson', data: data });
+    map.addSource('originData', { type: 'geojson', data: originData });
   }
   
-  // Use the 'yearData' source to create a new layer for origin
-  if (!map.getLayer('originData')) {
+  // Use the 'originData' source to create a new layer for origin
+  if (!map.getLayer('originLayer')) {
     map.addLayer({
-      id: 'originData',
+      id: 'originLayer',
       type: 'circle',
-      source: 'yearData',
-      filter: ['==', ['get', 'featureType'], 'origin'],
+      source: 'originData',
       paint: {
         'circle-radius': [
           'interpolate',
@@ -147,14 +156,20 @@ function updateMap(data) {
       }
     });
   }
-  
-  // Use the 'yearData' source to create a new layer for destination
-  if (!map.getLayer('destinationData')) {
+
+  // Add the data to the map as a source
+  if (map.getSource('destinationData')) {
+    map.getSource('destinationData').setData(destinationData);
+  } else {
+    map.addSource('destinationData', { type: 'geojson', data: destinationData });
+  }
+
+  // Use the 'destinationData' source to create a new layer for destination
+  if (!map.getLayer('destinationLayer')) {
     map.addLayer({
-      id: 'destinationData',
+      id: 'destinationLayer',
       type: 'circle',
-      source: 'yearData',
-      filter: ['==', ['get', 'featureType'], 'destination'],
+      source: 'destinationData',
       paint: {
         'circle-radius': [
           'interpolate',
