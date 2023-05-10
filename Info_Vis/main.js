@@ -48,18 +48,18 @@ d3.csv('geocoded_population_no_missing.csv').then(data => {
   slider.on('input', function() {
     let year = this.value;
 
-    // Update the label
-    sliderLabel.text(`Year: ${year}`);
+   // Update the label
+  sliderLabel.text(`Year: ${year}`);
 
-    // Check if the layer exists before filtering
-    if (map.getLayer('originData')) {
-      map.setFilter('originData', ['==', ['get', 'year'], year]);
-    }
+  // Check if the layer exists before filtering
+  if (map.getLayer('originLayer')) {
+    map.setFilter('originLayer', ['==', ['get', 'year'], year]);
+  }
 
-    if (map.getLayer('destinationData')) {
-      map.setFilter('destinationData', ['==', ['get', 'year'], year]);
-    }
-  });
+  if (map.getLayer('destinationLayer')) {
+    map.setFilter('destinationLayer', ['==', ['get', 'year'], year]);
+  }
+});
 });
 
 // Function to convert the data to GeoJSON
