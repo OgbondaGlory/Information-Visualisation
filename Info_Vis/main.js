@@ -22,54 +22,63 @@ map.on('load', function () {
     // Update the map
     updateMap(geojson);
 
-    // Create an interactive timeline
-    let years = Array.from(new Set(data.map(d => d.year)));
-
-    // Create a container for the slider and label
-    let sliderContainer = d3.select('body').append('div')
-      .style('position', 'absolute') // Set position to absolute to make the slider appear on top of the map
-      .style('top', '10px') // Set top margin
-      .style('left', '10px'); // Set left margin
-
-    // Create the slider
-    let slider = sliderContainer.append('input')
-      .attr('type', 'range')
-      .attr('min', d3.min(years))
-      .attr('max', d3.max(years))
-      .attr('value', d3.min(years))
-      .style('width', '300px'); // Set the width of the slider
-
-    // Create the label
-    let sliderLabel = sliderContainer.append('p')
-      .style('font-weight', 'bold')
-      .style('color', 'black')
-      .text(`Year: ${d3.min(years)}`);
-
-    // Add an event listener to update the map when the slider value changes
-    slider.on('input', function() {
-      let year = this.value;
-
-      // Update the label
-      sliderLabel.text(`Year: ${year}`);
-
-      // Check if the layer exists before filtering
-      if (map.getLayer('originLayer')) {
-        map.setFilter('originLayer', ['==', ['get', 'year'], year]);
-      }
-
-      if (map.getLayer('destinationLayer')) {
-        map.setFilter('destinationLayer', ['==', ['get', 'year'], year]);
-      }
-      // if (map.getLayer('lineLayer')) {
-      //   map.setFilter('lineLayer', ['==', ['get', 'year'], year]);
-      // }
-      // Remove the loading spinner
+    // Remove the loading spinner
     let loader = document.getElementById('loader');
     loader.style.display = 'none';
-    
+
+    // Add an event listener for the 'idle' event and create the slider
+    map.once('idle', function() {
+      createSlider(data);
     });
+   
   });
 });
+
+// Move the slider creation code to a separate function
+function createSlider(data) {
+  let years = Array.from(new Set(data.map(d => d.year)));
+
+  // Create a container for the slider and label
+  let sliderContainer = d3.select('body').append('div')
+    .style('position', 'absolute') // Set position to absolute to make the slider appear on top of the map
+    .style('top', '10px') // Set top margin
+    .style('left', '10px'); // Set left margin
+
+  // Create the slider
+  let slider = sliderContainer.append('input')
+    .attr('type', 'range')
+    .attr('min', d3.min(years))
+    .attr('max', d3.max(years))
+    .attr('value', d3.min(years))
+    .style('width', '300px'); // Set the width of the slider
+
+  // Create the label
+  let sliderLabel = sliderContainer.append('p')
+    .style('font-weight', 'bold')
+    .style('color', 'black')
+    .text(`Year: ${d3.min(years)}`);
+
+  // Add an event listener to update the map when the slider value changes
+  slider.on('input', function() {
+    let year = this.value;
+
+    // Update the label
+    sliderLabel.text(`Year: ${year}`);
+
+    // Check if the layer exists before filtering
+    if (map.getLayer('originLayer')) {
+      map.setFilter('originLayer', ['==', ['get', 'year'], year]);
+    }
+
+    if (map.getLayer('destinationLayer')) {
+      map.setFilter('destinationLayer', ['==', ['get', 'year'], year]);
+    }
+    
+    if (map.getLayer('lineLayer')) {
+      map.setFilter('lineLayer', ['==', ['get', 'year'], year]);
+    }
+  });
+}
 
 // Function to convert the data to GeoJSON
 // Function to convert the data to GeoJSON
