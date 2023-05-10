@@ -41,7 +41,7 @@ map.on('load', function () {
     map.on('mousemove', 'originLayer', function(e) {
       map.getCanvas().style.cursor = 'pointer';
       let coordinates = e.features[0].geometry.coordinates.slice();
-      let description = `<strong>Refugees</strong>: ${e.features[0].properties.value}`;
+      let description = `<strong>${e.features[0].properties.citizenship_stable}</strong><br>Internally Displaced: ${e.features[0].properties.value}`;
 
       // Ensure that if the map is zoomed out such that multiple copies of the feature are visible, the popup appears over the copy being pointed to.
       while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
@@ -50,18 +50,13 @@ map.on('load', function () {
 
       // Populate the popup and set its coordinates based on the feature.
       popup.setLngLat(coordinates).setHTML(description).addTo(map);
-    });
-
-    map.on('mouseleave', 'originLayer', function() {
-      map.getCanvas().style.cursor = '';
-      popup.remove();
     });
 
     // Display a popup on mousemove for the destination layer
     map.on('mousemove', 'destinationLayer', function(e) {
       map.getCanvas().style.cursor = 'pointer';
       let coordinates = e.features[0].geometry.coordinates.slice();
-      let description = `<strong>Refugees</strong>: ${e.features[0].properties.value}`;
+      let description = `<strong>${e.features[0].properties.citizenship_stable}</strong><br>Refugees: ${e.features[0].properties.value}`;
 
       // Ensure that if the map is zoomed out such that multiple copies of the feature are visible, the popup appears over the copy being pointed to.
       while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
@@ -71,6 +66,7 @@ map.on('load', function () {
       // Populate the popup and set its coordinates based on the feature.
       popup.setLngLat(coordinates).setHTML(description).addTo(map);
     });
+
 
     map.on('mouseleave', 'destinationLayer', function() {
       map.getCanvas().style.cursor = '';
