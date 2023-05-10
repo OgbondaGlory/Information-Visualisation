@@ -35,9 +35,12 @@ d3.csv('geocoded_population_no_missing.csv').then(data => {
   // Add an event listener to update the map when the slider value changes
   slider.on('input', function() {
     let year = this.value;
-    map.setFilter('yearData', ['==', ['get', 'year'], year]);
+    if (map.getSource('yearData')) { // Check if the source exists before filtering
+      map.setFilter('yearData', ['==', ['get', 'year'], year]);
+    }
   });
 });
+
 
 // Function to convert the data to GeoJSON
 function convertToGeoJSON(data) {
@@ -93,15 +96,6 @@ function convertToGeoJSON(data) {
 
 // Function to update the map
 function updateMap(data) {
-
-  // Add an event listener to update the map when the slider value changes
-slider.on('input', function() {
-  let year = this.value;
-  if (map.getSource('yearData')) { // Check if the source exists before filtering
-    map.setFilter('yearData', ['==', ['get', 'year'], year]);
-  }
-});
-
   console.log('Destination features:', data.features.filter(feature => feature.properties.featureType === 'destination'));
   console.log('Origin features:', data.features.filter(feature => feature.properties.featureType === 'origin'));
 
