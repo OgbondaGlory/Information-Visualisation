@@ -1,6 +1,7 @@
 // Set your Mapbox API access token
 mapboxgl.accessToken = 'pk.eyJ1Ijoib2dib25kYWdsb3J5IiwiYSI6ImNsaGZlajZqZzA3eGQzbnBmc3Z1dXNhNHoifQ.5jg6108wmHZYjgvBoN-NoA';
 
+
 // Initialize the map
 const map = new mapboxgl.Map({
   container: 'map',
@@ -13,6 +14,9 @@ const map = new mapboxgl.Map({
   antialias: true,
   hash: true
 });
+
+let selectedCitizenship = null;
+
 
 map.on('load', function () {
   d3.csv('geocoded_population_no_missing.csv').then(data => {
@@ -76,6 +80,22 @@ map.on('load', function () {
       map.getCanvas().style.cursor = '';
       popup.remove();
     });
+
+    map.on('click', 'originLayer', function (e) {
+      selectedCitizenship = e.features[0].properties.citizenship_stable;
+      updateMap(geojson);
+    });
+        
+    map.on('click', 'destinationLayer', function (e) {
+      selectedCitizenship = e.features[0].properties.citizenship_stable;
+      updateMap(geojson);
+    });
+    
+    map.on('click', function (e) {
+      selectedCitizenship = null;
+      updateMap(geojson);
+    });
+
   });
 });
 
@@ -103,26 +123,27 @@ function createSlider(data) {
     .style('color', 'black')
     .text(`Year: ${d3.min(years)}`);
 
-  // Add an event listener to update the map when the slider value changes
+  //// Add an event listener to update the map when the slider value changes
   slider.on('input', function() {
-    let year = this.value;
+      let year = this.value;
 
-    // Update the label
-    sliderLabel.text(`Year: ${year}`);
+      // Update the label
+      sliderLabel.text(`Year: ${year}`);
 
-    // Check if the layer exists before filtering
-    if (map.getLayer('originLayer')) {
-      map.setFilter('originLayer', ['==', ['get', 'year'], year]);
-    }
+      // Check if the layer exists before filtering
+      if (map.getLayer('originLayer')) {
+        map.setFilter('originLayer', ['==', ['get', 'year'], year]);
+      }
 
-    if (map.getLayer('destinationLayer')) {
-      map.setFilter('destinationLayer', ['==', ['get', 'year'], year]);
-    }
-    
-    if (map.getLayer('lineLayer')) {
-      map.setFilter('lineLayer', ['==', ['get', 'year'], year]);
-    }
-  });
+      if (map.getLayer('destinationLayer')) {
+        map.setFilter('destinationLayer', ['==', ['get', 'year'], year]);
+      }
+        
+      if (map.getLayer('lineLayer')) {
+        map.setFilter('lineLayer', ['==', ['get', 'year'], year]);
+      }
+    });
+
 }
 
 // Function to convert the data to GeoJSON
@@ -204,9 +225,8 @@ function convertToGeoJSON(data) {
 
 // Function to update the map
 function updateMap(data) {
-  // Separate origin and destination data
-   // Separate origin, destination, and line data
-  let originData = {
+   // Separate origin and destination data
+   let originData = {
     type: 'FeatureCollection',
     features: data.features.filter(feature => feature.properties.featureType === 'origin')
   };
@@ -214,16 +234,28 @@ function updateMap(data) {
     type: 'FeatureCollection',
     features: data.features.filter(feature => feature.properties.featureType === 'destination')
   };
-  // let lineData = {
-  //   type: 'FeatureCollection',
-  //   features: data.features.filter(feature => feature.properties.featureType === 'line')
-  // };
-  // console.log(lineData); // Log the line data to the console
-  // console.log(originData); // Log the line data to the console
-  // console.log(destinationData); // Log the line data to the console
-  // console.log(JSON.stringify(originData, null, 2));
-  // console.log(JSON.stringify(lineData, null, 2));
 
+  // Modify the circle color and opacity based on whether the data point's citizenship matches the selected one
+  let circlePaint = citizenship => ({
+    'circle-radius': [
+      'interpolate',
+      ['linear'],
+      ['get', 'value'],
+      1, 5, // Circle radius of 5 for values between 1-70
+      70, 10, // Circle radius of 10 for values between 71-140
+      140, 15 // Circle radius of 15 for values between 141-200
+    ],
+    'circle-color': citizenship === selectedCitizenship ? '#00FF00' : '#FFCC66',
+    'circle-opacity': citizenship === selectedCitizenship ? 1 : 0.8
+  });
+
+  // Set the paint properties for each data point
+  originData.features.forEach(feature => {
+    feature.properties.circlePaint = circlePaint(feature.properties.citizenship_stable);
+  });
+  destinationData.features.forEach(feature => {
+    feature.properties.circlePaint = circlePaint(feature.properties.citizenship_stable);
+  });
 
   // Add the origin data to the map as a source
   if (map.getSource('originData')) {
@@ -302,6 +334,7 @@ function updateMap(data) {
       console.log("Error adding destination layer: ", error);
     }
   }
+
 // / Add the line data to the map as a source
   // if (map.getSource('lineData')) {
   //   map.getSource('lineData').setData(lineData);
@@ -329,4 +362,15 @@ function updateMap(data) {
   //     console.log("Error adding line layer: ", error);
   //   }
   // }
+// Set the paint property of the layer to the circlePaint property of the data point
+    map.addLayer({
+      id: 'destinationLayer',
+      type: 'circle',
+      source: 'destinationData',
+      paint: ['get', 'circlePaint']
+    });
+
 }
+
+
+
