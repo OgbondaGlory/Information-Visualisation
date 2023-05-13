@@ -1,7 +1,6 @@
 // Set your Mapbox API access token
 mapboxgl.accessToken = 'pk.eyJ1Ijoib2dib25kYWdsb3J5IiwiYSI6ImNsaGZlajZqZzA3eGQzbnBmc3Z1dXNhNHoifQ.5jg6108wmHZYjgvBoN-NoA';
 
-
 // Initialize the map
 const map = new mapboxgl.Map({
   container: 'map',
@@ -16,7 +15,6 @@ const map = new mapboxgl.Map({
 });
 
 let selectedCitizenship = null;
-
 
 map.on('load', function () {
   d3.csv('geocoded_population_no_missing.csv').then(data => {
@@ -71,7 +69,6 @@ map.on('load', function () {
       popup.setLngLat(coordinates).setHTML(description).addTo(map);
     });
 
-
     map.on('mouseleave', 'destinationLayer', function() {
       map.getCanvas().style.cursor = '';
       popup.remove();
@@ -81,23 +78,77 @@ map.on('load', function () {
       popup.remove();
     });
 
-    map.on('click', 'originLayer', function (e) {
-      selectedCitizenship = e.features[0].properties.citizenship_stable;
-      updateMap(geojson);
-    });
-        
-    map.on('click', 'destinationLayer', function (e) {
-      selectedCitizenship = e.features[0].properties.citizenship_stable;
-      updateMap(geojson);
-    });
-    
-    map.on('click', function (e) {
-      selectedCitizenship = null;
-      updateMap(geojson);
+    // Add the clustering feature
+    map.addSource('refugees', {
+      type: 'geojson',
+      data: geojson,
+      cluster: true,
+      clusterMaxZoom: 14, // Max zoom to cluster points
+      clusterRadius: 50 // Radius of each cluster when clustering points
     });
 
+    map.addLayer({
+      id: 'clusters',
+      type: 'circle',
+      source: 'refugees',
+      filter: ['has', 'point_count'],
+      paint: {
+        // Use step expressions (https://docs.mapbox.com/mapbox-gl-js/style-spec/#expressions-step)
+        // with three steps to implement three types of circles:
+        //   * Blue, 20px circles when point count is less than 100
+        //   * Yellow, 30px circles when point count is between 100 and 750
+        //   * Pink, 40px circles when point count is greater than or equal to 750
+        'circle-color': [
+          'step',
+          ['get', 'point_count'],
+          '#51bbd6',
+          100,
+          '#f1f075',
+          750,
+          '#f28cb1'
+        ],
+        'circle-radius': [
+          'step',
+          ['get', 'point_count'],
+          20,
+          100,
+          30,
+          750,
+          40
+        ]
+      }
+    });
+
+    map.addLayer({
+      id: 'cluster-count',
+      type: 'symbol',
+      source: 'refugees',
+      filter: ['has', 'point_count'],
+      layout: {
+        'text-field': '{point_count_abbreviated}',
+        'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+        'text-size': 12
+      }
+    });
+
+    map.addLayer({
+      id: 'unclustered-point',
+      type: 'circle',
+      source: 'refugees',
+      filter: ['!', ['has', 'point_count']],
+      paint: {
+        'circle-color': '#11b4da',
+        'circle-radius': 4,
+        'circle-stroke-width': 1,
+        'circle-stroke-color': '#fff'
+      }
+    });
   });
 });
+
+
+
+
 
 // Move the slider creation code to a separate function
 function createSlider(data) {
@@ -129,7 +180,12 @@ function createSlider(data) {
 
       // Update the label
       sliderLabel.text(`Year: ${year}`);
-
+      if (map.getSource('refugees')) {
+        let filteredData = data.filter(d => d.year == year);
+        let filteredGeojson = convertToGeoJSON(filteredData);
+        map.getSource('refugees').setData(filteredGeojson);
+      }
+      
       // Check if the layer exists before filtering
       if (map.getLayer('originLayer')) {
         map.setFilter('originLayer', ['==', ['get', 'year'], year]);
@@ -139,14 +195,13 @@ function createSlider(data) {
         map.setFilter('destinationLayer', ['==', ['get', 'year'], year]);
       }
         
-      if (map.getLayer('lineLayer')) {
-        map.setFilter('lineLayer', ['==', ['get', 'year'], year]);
+      if (map.getLayer('unclustered-point')) {
+        map.setFilter('unclustered-point', ['==', ['get', 'year'], year]);
       }
     });
 
 }
 
-// Function to convert the data to GeoJSON
 // Function to convert the data to GeoJSON
 function convertToGeoJSON(data) {
   let aggregatedData = {};
@@ -192,28 +247,6 @@ function convertToGeoJSON(data) {
       aggregatedData[destinationKey].properties.value += parseFloat(d.refugees) || 0;
     }
 
-    // Create line features connecting origins to destinations
-    // let lineKey = `${d.year}-line-${d.citizenship_stable}-${d.city}`;
-    // if (!aggregatedData[lineKey]) {
-    //   aggregatedData[lineKey] = {
-    //     type: 'Feature',
-    //     properties: {
-    //       year: d.year,
-    //       value: parseFloat(d.refugees) || 0,
-    //       citizenship_stable: d.citizenship_stable,
-    //       featureType: 'line'
-    //     },
-    //     geometry: {
-    //       type: 'LineString',
-    //       coordinates: [
-    //         [parseFloat(d.stable_longitude), parseFloat(d.stable_latitude)],
-    //         [parseFloat(d.longitude), parseFloat(d.latitude)]
-    //       ],
-    //     }
-    //   };
-    // } else {
-    //   aggregatedData[lineKey].properties.value += parseFloat(d.refugees) || 0;
-    // }
   });
 
   return {
@@ -234,6 +267,12 @@ function updateMap(data) {
     type: 'FeatureCollection',
     features: data.features.filter(feature => feature.properties.featureType === 'destination')
   };
+  // Separate data for clustering
+  let clusterData = {
+    type: 'FeatureCollection',
+    features: data.features
+  };
+
 
   // Modify the circle color and opacity based on whether the data point's citizenship matches the selected one
   let circlePaint = citizenship => ({
@@ -269,29 +308,29 @@ function updateMap(data) {
   }
 
   // Use the 'originData' source to create a new layer for origin
-  if (!map.getLayer('originLayer')) {
-    try {
-      map.addLayer({
-        id: 'originLayer',
-        type: 'circle',
-        source: 'originData',
-        paint: {
-          'circle-radius': [
-            'interpolate',
-            ['linear'],
-            ['get', 'value'],
-            1, 5, // Circle radius of 5 for values between 1-70
-            70, 10, // Circle radius of 10 for values between 71-140
-            140, 15 // Circle radius of 15 for values between 141-200
-          ],
-          'circle-color': '#FFCC66', // set color for origin
-          'circle-opacity': 0.8
-        }
-      });
-    } catch (error) {
-      console.log("Error adding origin layer: ", error);
-    }
-  }
+  // if (!map.getLayer('originLayer')) {
+  //   try {
+  //     map.addLayer({
+  //       id: 'originLayer',
+  //       type: 'circle',
+  //       source: 'originData',
+  //       paint: {
+  //         'circle-radius': [
+  //           'interpolate',
+  //           ['linear'],
+  //           ['get', 'value'],
+  //           1, 5, // Circle radius of 5 for values between 1-70
+  //           70, 10, // Circle radius of 10 for values between 71-140
+  //           140, 15 // Circle radius of 15 for values between 141-200
+  //         ],
+  //         'circle-color': '#FFCC66', // set color for origin
+  //         'circle-opacity': 0.8
+  //       }
+  //     });
+  //   } catch (error) {
+  //     console.log("Error adding origin layer: ", error);
+  //   }
+  // }
 
   // Add the destination data to the map as a source
   if (map.getSource('destinationData')) {
@@ -305,70 +344,48 @@ function updateMap(data) {
   }
 
   // Use the 'destinationData' source to create a new layer for destination
-  if (!map.getLayer('destinationLayer')) {
-    try {
-      map.addLayer({
-        id: 'destinationLayer',
-        type: 'circle',
-        source: 'destinationData',
-        paint: {
-          'circle-radius': [
-            'interpolate',
-            ['linear'],
-            ['get', 'value'],
-            1, 5, // Circle radius of 5 for values between 1-70
-            70, 10, // Circle radius of 10 for values between 71-140
-            140, 15 // Circle radius of 15 for values between 141-200
-          ],
-          'circle-color': [
-            'interpolate',
-            ['linear'],
-            ['get', 'value'],
-            1, '#FF9900',
-            200, '#FF0000'
-          ],
-          'circle-opacity': 0.8       
-        }
-      });
-    } catch (error) {
-      console.log("Error adding destination layer: ", error);
-    }
-  }
-
-// / Add the line data to the map as a source
-  // if (map.getSource('lineData')) {
-  //   map.getSource('lineData').setData(lineData);
-  // } else {
-  //   try {
-  //     map.addSource('lineData', { type: 'geojson', data: lineData });
-  //   } catch (error) {
-  //     console.log("Error adding line data source: ", error);
-  //   }
-  // }
-
-  // // Use the 'lineData' source to create a new layer for lines
-  // if (!map.getLayer('lineLayer')) {
+  // if (!map.getLayer('destinationLayer')) {
   //   try {
   //     map.addLayer({
-  //       id: 'lineLayer',
-  //       type: 'line',
-  //       source: 'lineData',
+  //       id: 'destinationLayer',
+  //       type: 'circle',
+  //       source: 'destinationData',
   //       paint: {
-  //         'line-width': 20,
-  //         'line-color': '#007cbf'
+  //         'circle-radius': [
+  //           'interpolate',
+  //           ['linear'],
+  //           ['get', 'value'],
+  //           1, 5, // Circle radius of 5 for values between 1-70
+  //           70, 10, // Circle radius of 10 for values between 71-140
+  //           140, 15 // Circle radius of 15 for values between 141-200
+  //         ],
+  //         'circle-color': [
+  //           'interpolate',
+  //           ['linear'],
+  //           ['get', 'value'],
+  //           1, '#FF9900',
+  //           200, '#FF0000'
+  //         ],
+  //         'circle-opacity': 0.8       
   //       }
   //     });
   //   } catch (error) {
-  //     console.log("Error adding line layer: ", error);
+  //     console.log("Error adding destination layer: ", error);
   //   }
   // }
+
+
+
+  
 // Set the paint property of the layer to the circlePaint property of the data point
-    map.addLayer({
-      id: 'destinationLayer',
-      type: 'circle',
-      source: 'destinationData',
-      paint: ['get', 'circlePaint']
-    });
+    // map.addLayer({
+    //   id: 'destinationLayer',
+    //   type: 'circle',
+    //   source: 'destinationData',
+    //   paint: ['get', 'circlePaint']
+    // });
+
+    
 
 }
 
