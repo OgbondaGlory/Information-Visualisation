@@ -78,46 +78,77 @@ map.on('load', function () {
       popup.remove();
     });
 
-    // Add the clustering feature
-    map.addSource('refugees', {
-      type: 'geojson',
-      data: geojson,
-      cluster: true,
-      clusterMaxZoom: 14, // Max zoom to cluster points
-      clusterRadius: 50 // Radius of each cluster when clustering points
-    });
+   // Add the clustering feature
+map.addSource('refugees', {
+  type: 'geojson',
+  data: geojson,
+  cluster: true,
+  clusterMaxZoom: 14, // Max zoom to cluster points
+  clusterRadius: 50 // Radius of each cluster when clustering points
+});
 
-    map.addLayer({
-      id: 'clusters',
-      type: 'circle',
-      source: 'refugees',
-      filter: ['has', 'point_count'],
-      paint: {
-        // Use step expressions (https://docs.mapbox.com/mapbox-gl-js/style-spec/#expressions-step)
-        // with three steps to implement three types of circles:
-        //   * Blue, 20px circles when point count is less than 100
-        //   * Yellow, 30px circles when point count is between 100 and 750
-        //   * Pink, 40px circles when point count is greater than or equal to 750
-        'circle-color': [
-          'step',
-          ['get', 'point_count'],
-          '#51bbd6',
-          100,
-          '#f1f075',
-          750,
-          '#f28cb1'
-        ],
-        'circle-radius': [
-          'step',
-          ['get', 'point_count'],
-          20,
-          100,
-          30,
-          750,
-          40
-        ]
-      }
-    });
+map.addLayer({
+  id: 'clusters',
+  type: 'circle',
+  source: 'refugees',
+  filter: ['has', 'point_count'],
+  paint: {
+    'circle-color': [
+      'case',
+      ['boolean', ['feature-state', 'hover'], false],
+      '#00ff00', // color when hover is true
+      [
+        'step',
+        ['get', 'point_count'],
+        '#51bbd6',
+        100,
+        '#f1f075',
+        750,
+        '#f28cb1'
+      ] // color scale when hover is false
+    ],
+    'circle-opacity': [
+      'case',
+      ['boolean', ['feature-state', 'hover'], false],
+      0.5, // opacity when hover is true
+      1 // opacity when hover is false
+    ],
+    'circle-radius': [
+      'step',
+      ['get', 'point_count'],
+      20,
+      100,
+      30,
+      750,
+      40
+    ]
+  }
+});
+
+let hoveredFeatureId = null;
+
+// When the mouse enters a cluster, set its hover state to true
+map.on('mouseenter', 'clusters', function(e) {
+  map.getCanvas().style.cursor = 'pointer';
+  hoveredFeatureId = e.features[0].id;
+  map.setFeatureState(
+    { source: 'refugees', id: hoveredFeatureId },
+    { hover: true }
+  );
+});
+
+// When the mouse leaves a cluster, set its hover state to false
+map.on('mouseleave', 'clusters', function() {
+  map.getCanvas().style.cursor = '';
+  if (hoveredFeatureId !== null) {
+    map.setFeatureState(
+      { source: 'refugees', id: hoveredFeatureId },
+      { hover: false }
+    );
+  }
+  hoveredFeatureId = null;
+});
+
 
     map.addLayer({
       id: 'cluster-count',
@@ -143,6 +174,7 @@ map.on('load', function () {
         'circle-stroke-color': '#fff'
       }
     });
+    
   });
 });
 
