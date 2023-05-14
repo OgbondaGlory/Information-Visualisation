@@ -100,11 +100,11 @@ map.addLayer({
       [
         'step',
         ['get', 'point_count'],
-        '#51bbd6',
+        '#FFCC66',
         100,
-        '#f1f075',
+        '#FF9900',
         750,
-        '#f28cb1'
+        '#FF0000'
       ] // color scale when hover is false
     ],
     'circle-opacity': [
@@ -147,6 +147,77 @@ map.on('mouseleave', 'clusters', function() {
     );
   }
   hoveredFeatureId = null;
+});
+
+// When a click event occurs on a cluster, expand it and show details in the sidebar
+map.on('click', 'clusters', function(e) {
+  let features = map.queryRenderedFeatures(e.point, {
+    layers: ['clusters']
+  });
+  let clusterId = features[0].properties.cluster_id;
+
+  // Expand the cluster
+  map.getSource('refugees').getClusterExpansionZoom(
+    clusterId,
+    function(err, zoom) {
+      if (err) {
+        return console.error('Error during cluster expansion:', err);
+      }
+
+      map.flyTo({
+        center: features[0].geometry.coordinates,
+        zoom: zoom
+      });
+    }
+  );
+
+  // Get the points in the cluster and show details in the sidebar
+  map.getSource('refugees').getClusterLeaves(
+    clusterId,
+    100,  // limit (max number of features to return)
+    0,    // offset (number of features to skip)
+    function(err, leaves) {
+      if (err) {
+        return console.error('Error during getting cluster leaves:', err);
+      }
+
+      // Populate the sidebar with information about the points in the cluster
+      let sidebar = document.getElementById('sidebar');
+      sidebar.innerHTML = '<h2>Cluster Details</h2>';
+      leaves.forEach(function(leaf) {
+        let sidebarContent = `<strong>${leaf.properties.citizenship_stable}</strong><br>`;
+            
+        if (leaf.properties.featureType === "origin") {
+          sidebarContent += `Internally Displaced: ${leaf.properties.value}<br>`;
+      
+          // Fetch the location for the coordinates of the origin point
+          fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${leaf.geometry.coordinates[0]},${leaf.geometry.coordinates[1]}.json?access_token=pk.eyJ1Ijoib2dib25kYWdsb3J5IiwiYSI6ImNsaGZlajZqZzA3eGQzbnBmc3Z1dXNhNHoifQ.5jg6108wmHZYjgvBoN-NoA`)
+          .then(response => response.json())
+          .then(data => {
+            if (data.features && data.features.length > 0) {
+              sidebarContent += `Location: ${data.features[0].place_name}<br>`;
+            }
+      
+            sidebar.innerHTML += `<p>${sidebarContent}</p>`;
+          });
+        } else if (leaf.properties.featureType === "destination") {
+          sidebarContent += `Refugees: ${leaf.properties.value}<br>`;
+
+          // Fetch the location for the coordinates of the destination point
+          fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${leaf.geometry.coordinates[0]},${leaf.geometry.coordinates[1]}.json?access_token=pk.eyJ1Ijoib2dib25kYWdsb3J5IiwiYSI6ImNsaGZlajZqZzA3eGQzbnBmc3Z1dXNhNHoifQ.5jg6108wmHZYjgvBoN-NoA`)
+          .then(response => response.json())
+          .then(data => {
+            if (data.features && data.features.length > 0) {
+              sidebarContent += `Location: ${data.features[0].place_name}<br>`;
+            }
+      
+            sidebar.innerHTML += `<p>${sidebarContent}</p>`;
+          });
+        }
+      });
+    }
+);
+
 });
 
 
@@ -300,10 +371,10 @@ function updateMap(data) {
     features: data.features.filter(feature => feature.properties.featureType === 'destination')
   };
   // Separate data for clustering
-  let clusterData = {
-    type: 'FeatureCollection',
-    features: data.features
-  };
+  // let clusterData = {
+  //   type: 'FeatureCollection',
+  //   features: data.features
+  // };
 
 
   // Modify the circle color and opacity based on whether the data point's citizenship matches the selected one
