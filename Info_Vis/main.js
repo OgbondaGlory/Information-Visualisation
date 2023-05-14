@@ -183,7 +183,7 @@ map.on('click', 'clusters', function(e) {
 
       // Populate the sidebar with information about the points in the cluster
       let sidebar = document.getElementById('sidebar');
-      sidebar.innerHTML = '<h2>Cluster Details</h2>';
+      sidebar.innerHTML = '<h2>Migration Data</h2>';
       leaves.forEach(function(leaf) {
         let sidebarContent = `<strong>${leaf.properties.citizenship_stable}</strong><br>`;
             
@@ -217,6 +217,16 @@ map.on('click', 'clusters', function(e) {
       });
     }
 );
+
+// Get the sidebar and the button
+let sidebar = document.getElementById('sidebar');
+let toggleButton = document.getElementById('toggleSidebar');
+
+// Open the sidebar and update the button text
+sidebar.style.right = '0px';
+toggleButton.innerHTML = 'Hide Data';
+ // Make the sidebar appear
+ document.getElementById('sidebar').style.right = '0px';
 
 });
 
@@ -491,6 +501,17 @@ function updateMap(data) {
     
 
 }
+
+document.getElementById('toggleSidebar').addEventListener('click', function() {
+  let sidebar = document.getElementById('sidebar');
+  let toggleButton = this;  // 'this' refers to the element the event was bound to
+  let isHidden = sidebar.style.right === '0px';
+
+  sidebar.style.right = isHidden ? '-25%' : '0px';
+
+  // Change the button text based on whether the sidebar is now hidden or not
+  toggleButton.innerHTML = isHidden ? 'View Data' : 'Hide Data';
+});
 
 
 
