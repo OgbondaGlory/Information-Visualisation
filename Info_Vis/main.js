@@ -286,8 +286,6 @@ toggleButton.innerHTML = 'Hide Data';
 });
 
 
-
-
 // Move the slider creation code to a separate function
 function createSlider(data) {
   let years = Array.from(new Set(data.map(d => d.year)));
@@ -312,9 +310,45 @@ let sliderLabel = sliderContainer.append('p')
   .style('color', 'black')
   .text(`Year: ${d3.min(years)} - ${d3.max(years)}`); // Set initial label to full range
 
+// Create a container for the total points count
+let totalContainer = d3.select('body').append('div')
+  .style('position', 'absolute')
+  .style('bottom', '10px')
+  .style('left', '50%') // Center the container horizontally
+  .style('transform', 'translateX(-50%)'); // Center the container horizontally
+
+// Create the total points count text
+// Create the total points count text
+let totalPointsText = d3.select('body').append('p')
+  .style('font-size', '20px')
+  .style('position', 'absolute')
+  .style('text-align', 'center')
+  .style('width', '100%')
+  .style('bottom', '10px')
+  .text(`Total Points: ${data.length.toLocaleString()}`);
+
+// Variable to track whether it's the first time the 'input' event is triggered
+let isFirstInput = true;
 // Add an event listener to update the map when the slider value changes
 slider.on('input', function() {
   let year = this.value;
+
+  // Calculate the total number of points for the given year
+  let totalPoints;
+  
+  // Check if it's the first input
+  if (isFirstInput) {
+    // If it is, display the total number of points in the data
+    totalPoints = data.length;
+    // Update the variable to indicate that the first input has been handled
+    isFirstInput = false;
+  } else {
+    // If not, display the number of points in the selected year
+    totalPoints = data.filter(d => d.year == year).length;
+  }
+
+  // Update the total points count text
+  totalPointsText.text(`Total Points: ${totalPoints.toLocaleString()}`);
 
   // Update the label
   sliderLabel.text(`Year: ${year}`); // Always show specific year
