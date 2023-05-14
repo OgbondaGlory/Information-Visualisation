@@ -256,9 +256,34 @@ toggleButton.innerHTML = 'Hide Data';
       }
     });
     
+
+    // Create the legend
+  let legend = document.getElementById('legend');
+  
+  // Add an entry for individual points
+  let individualEntry = document.createElement('div');
+  individualEntry.innerHTML = `
+    <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: #11b4da;"></span>
+    <label> - Individual point</label>
+  `;
+  legend.appendChild(individualEntry);
+
+  // Add entries for the clusters
+  let clusterColors = ['#FFCC66', '#FF9900', '#FF0000'];
+  let clusterSizes = [20, 30, 40];
+  let clusterCounts = [1, 100, 750];
+
+  for (let i = 0; i < clusterColors.length; i++) {
+    let clusterEntry = document.createElement('div');
+    clusterEntry.innerHTML = `
+      <span style="display: inline-block; width: ${clusterSizes[i]}px; height: ${clusterSizes[i]}px; border-radius: 50%; background-color: ${clusterColors[i]};"></span>
+      <label> - Cluster (>=${clusterCounts[i]} points)</label>
+    `;
+    legend.appendChild(clusterEntry);
+  }
+
   });
 });
-
 
 
 
@@ -274,25 +299,25 @@ function createSlider(data) {
     .style('left', '10px'); // Set left margin
 
   // Create the slider
-  let slider = sliderContainer.append('input')
-    .attr('type', 'range')
-    .attr('min', d3.min(years))
-    .attr('max', d3.max(years))
-    .attr('value', d3.min(years))
-    .style('width', '300px'); // Set the width of the slider
+let slider = sliderContainer.append('input')
+  .attr('type', 'range')
+  .attr('min', d3.min(years))
+  .attr('max', d3.max(years))
+  .attr('value', d3.min(years))
+  .style('width', '300px'); // Set the width of the slider
 
-  // Create the label
-  let sliderLabel = sliderContainer.append('p')
-    .style('font-weight', 'bold')
-    .style('color', 'black')
-    .text(`Year: ${d3.min(years)}`);
+// Create the label
+let sliderLabel = sliderContainer.append('p')
+  .style('font-weight', 'bold')
+  .style('color', 'black')
+  .text(`Year: ${d3.min(years)} - ${d3.max(years)}`); // Set initial label to full range
 
-  //// Add an event listener to update the map when the slider value changes
-  slider.on('input', function() {
-      let year = this.value;
+// Add an event listener to update the map when the slider value changes
+slider.on('input', function() {
+  let year = this.value;
 
-      // Update the label
-      sliderLabel.text(`Year: ${year}`);
+  // Update the label
+  sliderLabel.text(`Year: ${year}`); // Always show specific year
       if (map.getSource('refugees')) {
         let filteredData = data.filter(d => d.year == year);
         let filteredGeojson = convertToGeoJSON(filteredData);
